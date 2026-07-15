@@ -1,0 +1,168 @@
+             IDENTIFICATION DIVISION.
+       PROGRAM-ID. PAGAMENTOS.
+
+       ENVIRONMENT DIVISION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+       01 WS-VALOR.
+          05 VALOR        PIC 9(6)V99.
+
+       01 WS-OPCAO        PIC 9.
+       01 WS-CARTAO       PIC X(16).
+       01 WS-CVV          PIC 999.
+       01 WS-PARCELAS     PIC 99.
+       01 WS-CHAVE-PIX    PIC X(60).
+       01 WS-CODIGO       PIC X(48).
+
+       01 WS-AUTORIZACAO  PIC X(12)
+          VALUE "APROVADA".
+
+       01 WS-VALOR-RECEBIDO   PIC 9(6)V99.
+       01 WS-VALOR-RESTANTE   PIC ZZZZZ9.99.
+       01 WS-TROCO            PIC ZZZZZ9.99.
+
+
+       PROCEDURE DIVISION.
+
+       INICIO.
+           DISPLAY "===================================="
+           DISPLAY "      SISTEMA DE PAGAMENTOS"
+           DISPLAY "===================================="
+
+           DISPLAY "Valor da Compra:"
+           ACCEPT VALOR.
+
+
+           PERFORM UNTIL VALOR <= 0
+               DISPLAY " "
+               DISPLAY "Valor Atual da Divida: R$ " VALOR
+               DISPLAY "Forma de Pagamento"
+               DISPLAY "1 - Dinheiro"
+               DISPLAY "2 - Cartao Credito"
+               DISPLAY "3 - Cartao Debito"
+               DISPLAY "4 - PIX"
+               DISPLAY "5 - Boleto"
+               DISPLAY "6 - Nota Fiscal"
+               DISPLAY " "
+
+               ACCEPT WS-OPCAO
+
+               EVALUATE WS-OPCAO
+                  WHEN 1
+                     PERFORM PAGAMENTO-DINHEIRO
+                  WHEN 2
+                     PERFORM PAGAMENTO-CREDITO
+                  WHEN 3
+                     PERFORM PAGAMENTO-DEBITO
+                  WHEN 4
+                     PERFORM PAGAMENTO-PIX
+                  WHEN 5
+                     PERFORM PAGAMENTO-BOLETO
+                  WHEN 6
+                     PERFORM EMITIR-NF
+                  WHEN OTHER
+                     DISPLAY "Opcao invalida."
+               END-EVALUATE
+           END-PERFORM.
+
+           DISPLAY " "
+           DISPLAY "Fim da Operacao."
+           STOP RUN.
+
+
+       PAGAMENTO-DINHEIRO.
+           DISPLAY "Pagamento em Dinheiro".
+           DISPLAY "Valor Recebido:".
+           ACCEPT WS-VALOR-RECEBIDO.
+
+           IF WS-VALOR-RECEBIDO < VALOR
+               COMPUTE WS-VALOR-RESTANTE = VALOR - WS-VALOR-RECEBIDO
+               DISPLAY "PAGAMENTO PARCIAL REGISTRADO!"
+               DISPLAY "Faltam R$ " WS-VALOR-RESTANTE
+               DISPLAY "Retornando ao menu para o saldo restante..."
+               DISPLAY "--------------------------------"
+               MOVE WS-VALOR-RESTANTE TO VALOR
+               PERFORM INICIO
+           ELSE
+               COMPUTE WS-TROCO = WS-VALOR-RECEBIDO - VALOR
+               DISPLAY "Pagamento Total Recebido."
+               DISPLAY "Troco: R$ " WS-TROCO
+               MOVE 0 TO VALOR
+               PERFORM COMPROVANTE
+           END-IF.
+
+
+       PAGAMENTO-CREDITO.
+
+           DISPLAY "Numero do Cartao:"
+           ACCEPT WS-CARTAO
+
+           DISPLAY "CVV:"
+           ACCEPT WS-CVV
+
+           DISPLAY "Parcelas:"
+           ACCEPT WS-PARCELAS
+
+           DISPLAY "Autorizando..."
+
+           DISPLAY "Transacao " WS-AUTORIZACAO
+
+           PERFORM COMPROVANTE.
+
+       PAGAMENTO-DEBITO.
+
+           DISPLAY "Numero do Cartao:"
+           ACCEPT WS-CARTAO
+
+           DISPLAY "CVV:"
+           ACCEPT WS-CVV
+
+           DISPLAY "Autorizando..."
+
+           DISPLAY "Transacao " WS-AUTORIZACAO
+
+           PERFORM COMPROVANTE.
+
+       PAGAMENTO-PIX.
+
+           DISPLAY "Chave PIX:"
+           ACCEPT WS-CHAVE-PIX
+
+           DISPLAY "Gerando QR CODE..."
+
+           DISPLAY "[########### QR CODE ###########]"
+
+           DISPLAY "PIX Recebido."
+
+           PERFORM COMPROVANTE.
+
+       PAGAMENTO-BOLETO.
+
+           DISPLAY "Codigo do Boleto:"
+
+           ACCEPT WS-CODIGO
+
+           DISPLAY "Boleto Registrado."
+
+           PERFORM COMPROVANTE.
+
+       EMITIR-NF.
+
+           DISPLAY "Emitindo Nota Fiscal..."
+
+           DISPLAY "Nota Fiscal Assinada Digitalmente."
+
+           PERFORM COMPROVANTE.
+
+       COMPROVANTE.
+
+           DISPLAY " "
+           DISPLAY "=============================="
+           DISPLAY "COMPROVANTE"
+           DISPLAY "Valor : R$ " VALOR
+           DISPLAY "Status: " WS-AUTORIZACAO
+           DISPLAY "==============================".
+
